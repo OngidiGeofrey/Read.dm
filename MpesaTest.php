@@ -6,7 +6,14 @@ $Business_Code = '174379';
 $Passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
 $Type_of_Transaction = 'CustomerPayBillOnline';
 $Token_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
-$phone_number = $_POST['phone_number'];
+
+//cleanup the phone number and remove unecessary symbols
+$tel = str_replace("-", "", $_POST['phone_number'];);
+$tel = str_replace( array(' ', '<', '>', '&', '{', '}', '*', "+", '!', '@', '#', "$", '%', '^', '&'), "", $tel );
+$tel = "254".substr($tel, -9);
+print_r($tel);
+$phone_number = $tel;
+
 $OnlinePayment = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 $total_amount = $_POST['amount'];
 $CallBackURL = 'https://2f50f430.ngrok.io/callback.php?key=your password';
