@@ -1,58 +1,86 @@
 <?php
-// Initialize the variables
-$consumer_key = 'MmALKE9Qgmb1S2OZqINQM5fDMVBU4io8';
-$consumer_secret = 'FofVeXg1bjWBnOyH';
-$Business_Code = '174379';
-$Passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
-$Type_of_Transaction = 'CustomerPayBillOnline';
-$Token_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
-$phone_number = $_POST['phone_number'];
-$OnlinePayment = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
-$total_amount = $_POST['amount'];
-$CallBackURL = 'https://2f50f430.ngrok.io/callback.php?key=your password';
-$Time_Stamp = date("Ymdhis");
-$password = base64_encode($Business_Code . $Passkey . $Time_Stamp);
-?>
 <?php
-$curl_Tranfer = curl_init();
-curl_setopt($curl_Tranfer, CURLOPT_URL, $Token_URL);
-$credentials = base64_encode($consumer_key . ':' . $consumer_secret);
-curl_setopt($curl_Tranfer, CURLOPT_HTTPHEADER, array('Authorization: Basic ' . $credentials));
-curl_setopt($curl_Tranfer, CURLOPT_HEADER, false);
-curl_setopt($curl_Tranfer, CURLOPT_RETURNTRANSFER, 1);
-curl_setopt($curl_Tranfer, CURLOPT_SSL_VERIFYPEER, false);
-$curl_Tranfer_response = curl_exec($curl_Tranfer);
+date_default_timezone_set('Africa/Nairobi');
 
-$token = json_decode($curl_Tranfer_response)->access_token;
-$curl_Tranfer2 = curl_init();
-curl_setopt($curl_Tranfer2, CURLOPT_URL, $OnlinePayment);
-curl_setopt($curl_Tranfer2, CURLOPT_HTTPHEADER, array('Content-Type:application/json', 'Authorization:Bearer ' . $token));
+# access token
+$consumerKey = 'mUyHRHaTbxQMfWTdwQF3xBPoYZHAPTRq'; 
+$consumerSecret = 'l0yGAiLzTBS96oHw'; 
 
-$curl_Tranfer2_post_data = [
-    'BusinessShortCode' => $Business_Code,
-    'Password' => $password,
-    'Timestamp' =>$Time_Stamp,
-    'TransactionType' =>$Type_of_Transaction,
-    'Amount' => $total_amount,
-    'PartyA' => $phone_number,
-    'PartyB' => $Business_Code,
-    'PhoneNumber' => $phone_number,
-    'CallBackURL' => $CallBackURL,
-    'AccountReference' => 'Hillary',
-    'TransactionDesc' => 'Test',
-];
+# define the variales
+$BusinessShortCode = '174379';
+$Passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
 
-$data2_string = json_encode($curl_Tranfer2_post_data);
+    //cleanup the phone number and remove unecessary symbols
+    $tel=254769414159; //
+    //$tel=$_POST['telephone_number'];
+    $tel = str_replace("-", "", $tel);
+    $tel = str_replace( array(' ', '<', '>', '&', '{', '}', '*', "+", '!', '@', '#', "$", '%', '^', '&'), "", $tel );
+	$phoneNumber = "254".substr($tel, -9);
 
-curl_setopt($curl_Tranfer2, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl_Tranfer2, CURLOPT_POST, true);
-curl_setopt($curl_Tranfer2, CURLOPT_POSTFIELDS, $data2_string);
-curl_setopt($curl_Tranfer2, CURLOPT_HEADER, false);
-curl_setopt($curl_Tranfer2, CURLOPT_SSL_VERIFYPEER, 0);
-curl_setopt($curl_Tranfer2, CURLOPT_SSL_VERIFYHOST, 0);
-$curl_Tranfer2_response = json_decode(curl_exec($curl_Tranfer2));
+    echo $phoneNumber;
 
-echo json_encode($curl_Tranfer2_response, JSON_PRETTY_PRINT);
+
+$phoneNumber = $phoneNumber; // This is my phone number, 
+$AccountReference = 'KweyuWebsite';
+$TransactionDesc = 'Testing';
+
+  $Amount ='2';
+//$Amount =$_POST['amount'];
+$Timestamp = date('YmdHis');    
+$Password = base64_encode($BusinessShortCode.$Passkey.$Timestamp);
+$credentials=base64_encode($consumerKey.':'.$consumerSecret);
+
+
+# header for access token
+$headers = ['Content-Type:application/json; charset=utf8'];
+
+# M-PESA endpoint urls
+$access_token_url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
+$initiate_url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
+
+# callback url
+$CallBackURL = 'https://theprimehouse.co.ke/darajaC2B/callBackUrl.php'; 
+
+$ch = curl_init('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials');
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Basic '.$credentials]);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+$response = curl_exec($ch);
+$result=json_decode($response);
+$token=$result->access_token;
+curl_close($ch);
+
+//print_r($token);
+# header for stk push
+$stkheader = ['Content-Type:application/json','Authorization:Bearer '.$token];
+
+# initiating the transaction
+$curl = curl_init();
+curl_setopt($curl, CURLOPT_URL, $initiate_url);
+curl_setopt($curl, CURLOPT_HTTPHEADER, $stkheader);
+
+$curl_post_data = array(
+  'BusinessShortCode' => $BusinessShortCode,
+  'Password' => $Password,
+  'Timestamp' => $Timestamp,
+  'TransactionType' => 'CustomerPayBillOnline',
+  'Amount' => $Amount,
+  'PartyA' => $BusinessShortCode,
+  'PartyB' => $BusinessShortCode,
+  'PhoneNumber' =>$phoneNumber ,
+  'CallBackURL' => $CallBackURL,
+  'AccountReference' => $AccountReference,
+  'TransactionDesc' => $TransactionDesc
+);
+
+$data_string = json_encode($curl_post_data);
+curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($curl, CURLOPT_POST, true);
+curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
+$curl_response = curl_exec($curl);
+//print_r($curl_response);
+
+echo $curl_response;
+?>
 ?>
 <form class="contact2-form validate-form" action="#" method="post">
    <input type="hidden" name="Check_request_ID" value="<?php echo $curl_Tranfer2_response->Check_request_ID ?>">
